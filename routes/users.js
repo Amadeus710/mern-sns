@@ -44,6 +44,63 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+//フォロー
+router.put("/:id/follow", async (req, res) => {
+    if (req.body.userId !== req.params.id) {
+        try {
+            const user = await User.findById(req.params.id);
+            const currentUser = await User.findById(req.body.userId);
+            if (!user.followers.includes(req.body.userId)) {
+                await user.updateOne({
+                    $push: {
+                        followers: req.body.userId,
+                    },
+                });
+                await currentUser.updateOne({
+                    $push: {
+                        followings: req.params.id,
+                    },
+                });
+                return res.status(200).json("フォロー完了");
+            } else {
+                return res.status(403).json("フォロー済み");
+            }
+        } catch (err) {
+            return res.status(500).json(err);
+        }
+    } else {
+        return res.status(500).json("自分のフォローは無理");
+    }
+});
+
+//フォロー解除
+router.put("/:id/unfollow", async (req, res) => {
+    if (req.body.userId !== req.params.id) {
+        try {
+            const user = await User.findById(req.params.id);
+            const currentUser = await User.findById(req.body.userId);
+            if (user.followers.includes(req.body.userId)) {
+                await user.updateOne({
+                    $pull: {
+                        followers: req.body.userId,
+                    },
+                });
+                await currentUser.updateOne({
+                    $pull: {
+                        followings: req.params.id,
+                    },
+                });
+                return res.status(200).json("フォロー解除完了");
+            } else {
+                return res.status(403).json("フォロー解除できない");
+            }
+        } catch (err) {
+            return res.status(500).json(err);
+        }
+    } else {
+        return res.status(500).json("自分のフォロー解除は無理");
+    }
+});
 // router.get("/", (req, res) => {
 //     res.send("user router");
 // });
